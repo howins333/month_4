@@ -1,23 +1,26 @@
 from django.db import models
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class Tag(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
 class Post(models.Model):
     title = models.CharField(max_length=500)
     description = models.TextField()
     created_ad = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    image = models.ImageField(null=True, upload_to="posts/")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    tag = models.ManyToManyField(Tag)
 
-# #CREATE
-# Post.objects.create()
-# post = Post(tittle='title#1', description='description_to-blog')
-# post.save()
-
-# #READ
-# post = Post.object.filter(title='title').first()
-
-# #UPDATE
-# post.tittle = "Howins"
-# post.save()
-
-# #DELETE
-# post.delete()
+    def __str__(self):
+        return self.title
