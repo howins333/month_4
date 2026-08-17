@@ -17,23 +17,18 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ("title", "description", "category", "image")
         widgets = {
-            "title": forms.TextInput(attrs={
-                "class": "form-control rounded-3",
-                "placeholder": "Введите заголовок поста"
-            }),
-            "description": forms.Textarea(attrs={
-                "class": "form-control rounded-3",
-                "rows": 4,
-                "placeholder": "Напишите текст поста..."
-            }),
-            "category": forms.Select(attrs={
-                "class": "form-select rounded-3"
-            }),
-            "image": forms.FileInput(attrs={
-                "class": "position-absolute top-0 start-0 w-100 h-100 opacity-0",
-                "id": "image",
-                "accept": "image/*"
-            })
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Введите заголовок"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 5,
+                    "placeholder": "Введите описание",
+                }
+            ),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "image": forms.FileInput(attrs={"class": "form-control"}),
         }
 
     def clean_title(self):

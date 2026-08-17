@@ -1,41 +1,90 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http.response import HttpResponse
-from django.http.request import HttpRequest
-from posts.models import Post
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy, reverse
+from django.http import HttpResponse
+from django.views import View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Q
+from posts.models import Post, Category
 from posts.forms import PostForm, CategoryForm
 
-def Hello_World(request: HttpRequest):
-    return HttpResponse("<h1>Hello World!</h1>")
+class HelloWorldView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("<h1>Hello World!</h1>")
 
-def my_name(request: HttpRequest):
-    return HttpResponse("<h1>Azis</h1>")
+class MyNameView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("<h1>Azis</h1>")
 
-def post_list(request: HttpRequest):
-    posts = Post.objects.order_by("-created_ad").all()
-    return render(request, "posts/posts.html", {"posts": posts})
+class PostListView(ListView):
+    model = Post
+    template_name = "posts/posts.html"
+    context_object_name = "posts"
+    ordering = ["-created_ad"]
 
-def post_detail(request: HttpRequest, id: int) -> HttpResponse:
-    post = get_object_or_404(Post, id=id)
-    return render(request, "posts/post_detail.html", {"post": post})
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.GET.get('q')
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+        return queryset
 
-def create_post(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = PostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save() 
-            return redirect("post_list")
-    else:
-        form = PostForm()
-        
-    return render(request, "posts/create_post.html", {"form": form})
+class PostDetailView(DetailView):
+    model = Post
+    template_name = "posts/post_detail.html"
+    context_object_name = "post"
+    pk_url_kwarg = 'id'
 
-def create_category(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = CategoryForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("post_create")
-    else:
-        form = CategoryForm()
-        
-    return render(request, "posts/create_category.html", {"form": form})
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = "posts/create_post.html"
+    success_url = reverse_lazy("post_list")
+    login_url = "login"
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class CategoryCreateView(LoginRequiredMixin, CreateView):
+    model = Category
+    form_class = CategoryForm
+    template_name = "posts/create_category.html"
+    success_url = reverse_lazy("post_create")
+    login_url = "login"
+
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = "posts/update_post.html"
+    pk_url_kwarg = 'id'
+    
+    def get_success_url(self):
+        return reverse("post_detail", kwargs={"id": self.object.id})
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = "posts/post_confirm_delete.html"
+    success_url = reverse_lazy("post_list")
+    pk_url_kwarg = 'id'
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author
+
+class PostLikeView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, id, *args, **kwargs):
+        post = get_object_or_404(Post, id=id)
+        if post.likes.filter(id=request.user.id).exists():
+            post.likes.remove(request.user)
+        else:
+            post.likes.add(request.user)
+        next_url = request.POST.get('next', reverse('post_detail', args=[id]))
+        return redirect(next_url)

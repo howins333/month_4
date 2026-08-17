@@ -16,22 +16,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from posts.views import Hello_World, my_name, post_list, post_detail, create_post, create_category
 from django.conf.urls.static import static
 from django.conf import settings
-from users.views import register, login_view, logout_view
+
+from posts.views import (
+    HelloWorldView, MyNameView, PostListView, PostDetailView, 
+    PostCreateView, CategoryCreateView, PostUpdateView, 
+    PostDeleteView, PostLikeView
+)
+from users.views import RegisterView, UserLoginView, UserLogoutView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("hello/", Hello_World),
-    path("me/", my_name),
-    path("posts/", post_list, name="post_list"),
-    path("posts/<int:id>/", post_detail, name="post_detail"),
-    path("posts/create/", create_post, name="post_create"),
-    path("category/create/", create_category, name="category_create"),
-    path('user/register', register, name="register"),
-    path("user/login", login_view, name="login"),
-    path("user/logout", logout_view, name="logout")
+    path("hello/", HelloWorldView.as_view(), name="hello"),
+    path("me/", MyNameView.as_view(), name="me"),
+    
+    path("posts/", PostListView.as_view(), name="post_list"),
+    path("posts/<int:id>/", PostDetailView.as_view(), name="post_detail"),
+    path("posts/create/", PostCreateView.as_view(), name="post_create"),
+    path("category/create/", CategoryCreateView.as_view(), name="category_create"),
+    
+    path("posts/<int:id>/update/", PostUpdateView.as_view(), name="post_update"),
+    path("posts/<int:id>/delete/", PostDeleteView.as_view(), name="post_delete"),
+    path("posts/<int:id>/like/", PostLikeView.as_view(), name="post_like"),
+    
+    path('user/register/', RegisterView.as_view(), name="register"),
+    path("user/login/", UserLoginView.as_view(), name="login"),
+    path("user/logout/", UserLogoutView.as_view(), name="logout")
 ] 
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
